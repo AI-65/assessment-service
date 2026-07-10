@@ -63,6 +63,23 @@ Query-Param `provider_key`).
 Kommentar-Anker sind **Wort-Positionen** (`start_position`/`end_position`)
 im exportierten Essay-Text — dieselbe Zählung, die die Corrector-App nutzt.
 
+## Smoke-Tests (ohne ILIAS)
+
+`tests/` enthält einen Harness, der die echten Provider-Codepfade gegen
+Reflection-generierte Stubs des Host-Systems ausführt — Key-Auth,
+`GET /provider/data` und der komplette Weg
+`import_suggestions.py → PUT /provider/changes → Bridge-ChangeRequests`:
+
+```bash
+composer install          # einmalig (PHP >= 8.2)
+python3 poc/external-correction-provider/tests/run_smoke.py
+```
+
+Geprüft wird u. a., dass falsche/fehlende Keys mit 401 abgelehnt werden und
+dass Kommentare, Punkte (inkl. Kommentar-Verknüpfung und generelle Kriterien)
+und Summary (inkl. Disclaimer, Status `pre_graded`) korrekt beim
+Corrector-Bridge-Aufruf ankommen.
+
 ## Lokaler Test
 
 ### 1. Umgebung
