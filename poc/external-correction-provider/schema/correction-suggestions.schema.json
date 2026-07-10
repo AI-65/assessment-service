@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edutiek.example/schemas/external-correction-suggestions/v0",
+  "title": "ExternalCorrectionSuggestions",
+  "description": "Correction suggestions returned by an external provider for one submission. Imported via scripts/import_suggestions.py, which maps this to PUT /provider/changes. All entries are stored under the provider's own corrector record and remain editable suggestions for the human correctors.",
+  "type": "object",
+  "required": ["schema", "item", "provider"],
+  "properties": {
+    "schema": { "const": "external-correction-suggestions/v0" },
+    "item": {
+      "type": "object",
+      "required": ["task_id", "writer_id"],
+      "properties": {
+        "task_id": { "type": "integer" },
+        "writer_id": { "type": "integer" }
+      }
+    },
+    "provider": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "description": "Display name of the provider, e.g. shown in the disclaimer" },
+        "model": { "type": ["string", "null"] },
+        "disclaimer": {
+          "type": ["string", "null"],
+          "description": "Note that these are AI generated suggestions. The import script prepends it to the summary text."
+        }
+      }
+    },
+    "comments": {
+      "type": "array",
+      "description": "Marginal comments anchored to word positions of the essay text",
+      "items": {
+        "type": "object",
+        "required": ["key", "start_position", "end_position", "comment"],
+        "properties": {
+          "key": { "type": "string", "description": "Stable unique key per comment, e.g. 'ai-c1'. Re-importing with the same key updates the comment." },
+          "start_position": { "type": "integer", "description": "First word of the commented passage (word index in the essay text, as counted by the corrector app)" },
+          "end_position": { "type": "integer", "description": "Last word of the commented passage" },
+          "parent_number": { "type": ["integer", "null"], "description": "Paragraph number the positions refer to (PDF/page based corrections); null for text based corrections" },
+          "comment": { "type": "string" },
+          "rating": {
+            "type": ["string", "null"],
+            "enum": ["cardinal", "excellent", null],
+            "description": "'cardinal' = serious error, 'excellent' = outstanding passage, null = neutral"
+          },
+          "points": {
+            "type": "array",
+            "description": "Partial points attached to this comment, each bound to a non-general rating criterion",
+            "items": {
+              "type": "object",
+              "required": ["key", "criterion_id", "points"],
+              "properties": {
+                "key": { "type": "string", "description": "Stable unique key, e.g. 'ai-p1'" },
+                "criterion_id": { "type": "integer" },
+                "points": { "type": "number" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "criterion_points": {
+      "type": "array",
+      "description": "Points for general criteria (not attached to a comment)",
+      "items": {
+        "type": "object",
+        "required": ["key", "criterion_id", "points"],
+        "properties": {
+          "key": { "type": "string" },
+          "criterion_id": { "type": "integer" },
+          "points": { "type": "number" }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "description": "Overall verdict of the provider",
+      "required": ["text", "points"],
+      "properties": {
+        "text": { "type": "string", "description": "Summary / overall verdict, HTML allowed" },
+        "points": { "type": "number", "description": "Total points" },
+        "status": {
+          "type": "string",
+          "enum": ["open", "pre_graded", "authorized"],
+          "default": "pre_graded",
+          "description": "Grading status to set. 'pre_graded' keeps the suggestion clearly non-final; 'authorized' makes comments and points visible to the other correctors (workflow checks of the assessment apply)."
+        }
+      }
+    }
+  }
+}

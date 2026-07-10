@@ -18,6 +18,7 @@ use Edutiek\AssessmentService\Assessment\CorrectionProcess\Service as Correction
 use Edutiek\AssessmentService\Assessment\CorrectionSettings\Service as CorrectionSettingsService;
 use Edutiek\AssessmentService\Assessment\Corrector\Service as CorrectorService;
 use Edutiek\AssessmentService\Assessment\Apps\AppCorrector;
+use Edutiek\AssessmentService\Assessment\Apps\AppProvider;
 use Edutiek\AssessmentService\Assessment\Data\OrgaSettings;
 use Edutiek\AssessmentService\Assessment\DisabledGroup\Service as DisabledGroupService;
 use Edutiek\AssessmentService\Assessment\EventHandling\AssessmentObserver as AssessmentObserver;
@@ -123,6 +124,25 @@ class Internal implements ComponentApi, ComponentApiFactory
     public function appCorrector(int $ass_id, int $context_id, int $user_id): AppCorrector
     {
         return new AppCorrector(
+            $ass_id,
+            $context_id,
+            $user_id,
+            $this->permissions($ass_id, $context_id, $user_id),
+            $this->restHelper($ass_id, $context_id, $user_id),
+            $this,
+            $this->slimApp(),
+            $this->dependencies->restContext(),
+            $this->dependencies->systemApi()->fileDelivery()
+        );
+    }
+
+    /**
+     * REST handler for external correction providers
+     * (no caching needed, created once per request)
+     */
+    public function appProvider(int $ass_id, int $context_id, int $user_id): AppProvider
+    {
+        return new AppProvider(
             $ass_id,
             $context_id,
             $user_id,

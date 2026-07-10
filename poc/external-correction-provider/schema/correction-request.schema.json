@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://edutiek.example/schemas/external-correction-request/v0",
+  "title": "ExternalCorrectionRequest",
+  "description": "Data bundle for one submission (task + writer) that an external correction provider receives from the assessment system. Produced by scripts/export_item.py from GET /provider/data and GET /provider/item.",
+  "type": "object",
+  "required": ["schema", "assessment", "item", "task", "essay", "provider"],
+  "properties": {
+    "schema": { "const": "external-correction-request/v0" },
+    "assessment": {
+      "type": "object",
+      "required": ["ass_id", "context_id"],
+      "properties": {
+        "ass_id": { "type": "integer", "description": "Assessment id in the assessment service" },
+        "context_id": { "type": "integer", "description": "Context id (ILIAS ref_id) of the assessment object" }
+      }
+    },
+    "item": {
+      "type": "object",
+      "required": ["task_id", "writer_id"],
+      "properties": {
+        "task_id": { "type": "integer" },
+        "writer_id": { "type": "integer" },
+        "pseudonym": { "type": ["string", "null"], "description": "Pseudonymized writer name; no real names are exported" }
+      }
+    },
+    "provider": {
+      "type": "object",
+      "required": ["user_id", "corrector_id"],
+      "description": "Identity of the provider's corrector record. All returned suggestions are stored under this corrector.",
+      "properties": {
+        "user_id": { "type": "integer" },
+        "corrector_id": { "type": "integer" },
+        "position": { "type": ["integer", "null"], "description": "Grading position of the provider's assignment (0 = first)" }
+      }
+    },
+    "task": {
+      "type": "object",
+      "required": ["title"],
+      "properties": {
+        "title": { "type": ["string", "null"] },
+        "instructions": { "type": ["string", "null"], "description": "Task/exam question, HTML" },
+        "solution": { "type": ["string", "null"], "description": "Model solution / grading hints, HTML, may be empty" }
+      }
+    },
+    "essay": {
+      "type": "object",
+      "required": ["text"],
+      "properties": {
+        "text": {
+          "type": ["string", "null"],
+          "description": "The writer's submission as HTML. Word positions for comments refer to the words of this text in document order (1-based, as counted by the corrector app)."
+        },
+        "pdf_available": { "type": "boolean", "description": "True if the submission exists as PDF (pdf_version); pages are then image based and comment positions refer to marks on pages instead of word positions" }
+      }
+    },
+    "criteria": {
+      "type": "array",
+      "description": "Rating criteria the provider may assign points to. Only criteria of the provider's own corrector (or assessment-wide criteria) are included.",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "max_points", "is_general"],
+        "properties": {
+          "id": { "type": "integer" },
+          "title": { "type": "string" },
+          "description": { "type": ["string", "null"] },
+          "max_points": { "type": "number" },
+          "is_general": {
+            "type": "boolean",
+            "description": "True: points may be given directly for the criterion (without comment). False: points for this criterion must be attached to a comment."
+          }
+        }
+      }
+    },
+    "settings": {
+      "type": "object",
+      "description": "Correction settings relevant for the provider",
+      "properties": {
+        "enable_comments": { "type": "boolean" },
+        "enable_comment_ratings": { "type": "boolean" },
+        "enable_partial_points": { "type": "boolean" },
+        "positive_rating": { "type": ["string", "null"], "description": "Label for positive comment rating" },
+        "negative_rating": { "type": ["string", "null"], "description": "Label for negative comment rating" }
+      }
+    }
+  }
+}

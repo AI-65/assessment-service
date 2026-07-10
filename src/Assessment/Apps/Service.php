@@ -116,6 +116,8 @@ class Service implements OpenService, RestService
                 return $this->internal->appWriter($this->ass_id, $this->context_id, $this->user_id);
             case Frontend::CORRECTOR:
                 return $this->internal->appCorrector($this->ass_id, $this->context_id, $this->user_id);
+            case Frontend::PROVIDER:
+                return $this->internal->appProvider($this->ass_id, $this->context_id, $this->user_id);
         };
         $this->context->sendResponse(RestException::NOT_IMPLEMENTED, "Handler for frontend '{$this->frontend->value}' not implemented.");
 

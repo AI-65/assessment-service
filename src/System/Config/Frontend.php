@@ -9,6 +9,10 @@ enum Frontend: string
     case WRITER = 'writer';
     case CORRECTOR = 'corrector';
 
+    // REST-only pseudo frontend for external correction providers
+    // it has no web app that can be opened, see AppProvider
+    case PROVIDER = 'provider';
+
     /**
      * Get the frontend from the first part of a REST route
      */
@@ -26,6 +30,7 @@ enum Frontend: string
         return match ($this) {
             self::WRITER => 'assessment-writer',
             self::CORRECTOR => 'assessment-corrector',
+            self::PROVIDER => 'assessment-provider',
         };
     }
 }

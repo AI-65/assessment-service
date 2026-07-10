@@ -1,0 +1,42 @@
+{
+  "schema": "external-correction-suggestions/v0",
+  "item": {
+    "task_id": 1,
+    "writer_id": 5
+  },
+  "provider": {
+    "name": "KI-Korrekturservice",
+    "model": "example-model-1",
+    "disclaimer": "KI-generierter Korrekturvorschlag – bitte prüfen und ggf. anpassen."
+  },
+  "comments": [
+    {
+      "key": "ai-c1",
+      "start_position": 12,
+      "end_position": 45,
+      "comment": "Der Obersatz ist unvollständig: Es fehlt die Nennung der Anspruchsgrundlage.",
+      "rating": "cardinal",
+      "points": [
+        { "key": "ai-p1", "criterion_id": 3, "points": 0.5 }
+      ]
+    },
+    {
+      "key": "ai-c2",
+      "start_position": 120,
+      "end_position": 180,
+      "comment": "Sehr saubere Subsumtion unter die Voraussetzungen des § 812 I 1 Alt. 1 BGB.",
+      "rating": "excellent",
+      "points": [
+        { "key": "ai-p2", "criterion_id": 4, "points": 2 }
+      ]
+    }
+  ],
+  "criterion_points": [
+    { "key": "ai-p3", "criterion_id": 7, "points": 1.5 }
+  ],
+  "summary": {
+    "text": "<p>Die Bearbeitung erfasst die wesentlichen Probleme des Falls. Aufbau und Schwerpunktsetzung sind überwiegend gelungen, im Bereicherungsrecht fehlt jedoch die Auseinandersetzung mit der Saldotheorie.</p>",
+    "points": 4,
+    "status": "pre_graded"
+  }
+}
