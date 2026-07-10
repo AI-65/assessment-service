@@ -80,6 +80,29 @@ dass Kommentare, Punkte (inkl. Kommentar-Verknüpfung und generelle Kriterien)
 und Summary (inkl. Disclaimer, Status `pre_graded`) korrekt beim
 Corrector-Bridge-Aufruf ankommen.
 
+## Verifiziert (Juli 2026)
+
+Der komplette Workflow wurde in einer echten ILIAS-10.9-Instanz (Ubuntu 24.04,
+PHP 8.3, MariaDB, Caddy + PHP-FPM) durchgespielt: Export der Testklausur →
+`suggestions.json` → Import → die Corrector-App zeigt der menschlichen
+Zweitkorrektorin den KI-Layer („Korrektur von … KI-Vorschlag (Erstkorrektur)")
+mit Randbemerkungen inkl. Textmarkierung und Kardinalfehler/Exzellent-Rating,
+Teilpunkten pro Kriterium, Gesamtvotum mit Disclaimer und Note aus dem
+Notenschema — während sie daneben ihre eigene Korrektur führt.
+
+Stolpersteine aus dem Praxistest:
+
+- **Die REST-URL ist `{ILIAS_HTTP_PATH}/xlas_rest.php`** — das Plugin-Setup
+  kopiert `endpoints/xlas_rest.php` ins Docroot (`public/`). Der Pfad unter
+  `Customizing/...` funktioniert nicht (relativer Autoloader-Require).
+- **Caddy/Nginx + PHP-FPM:** ILIAS erwartet die CGI-Variable `SERVER_ADDR`
+  (Login schlägt sonst fehl). Bei Caddy: `php_fastcgi ... { env SERVER_ADDR 127.0.0.1 }`.
+- **ILIAS-Datenbank als `utf8` (3-Byte) anlegen, nicht `utf8mb4`** — sonst
+  bricht der Schema-Import mit „Row size too large" ab.
+- Nach dem Plugin-Klonen in einer bestehenden Installation:
+  `composer dump-autoload` im ILIAS-Root (Plugin-Klassen stehen in der Classmap)
+  und `php cli/setup.php build --yes` (Artefakte) nicht vergessen.
+
 ## Lokaler Test
 
 ### 1. Umgebung
