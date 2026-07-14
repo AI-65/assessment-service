@@ -138,11 +138,11 @@ def cfg(name: str) -> str:
     return value
 
 
-def provider_get(route: str) -> dict:
+def provider_get(route: str, user_id: "str | None" = None) -> dict:
     params = {
         "ass_id": cfg("XLAS_ASS_ID"),
         "context_id": cfg("XLAS_CONTEXT_ID"),
-        "user_id": cfg("XLAS_USER_ID"),
+        "user_id": user_id or cfg("XLAS_USER_ID"),
     }
     url = cfg("XLAS_BASE").rstrip("/") + route + "?" + urllib.parse.urlencode(params)
     req = urllib.request.Request(url, headers={"X-Provider-Key": cfg("XLAS_PROVIDER_KEY")})
@@ -329,12 +329,15 @@ def correct_item(task_id: int, writer_id: int,
             targets.append((import_user_id, import_corrector_id, summary_status,
                             f"ai-k{import_corrector_id}", "Entwurf"))
         else:
-            targets.append((int(cfg("XLAS_USER_ID")), request["provider"]["corrector_id"],
-                            summary_status, "ai", "KI-Layer"))
-            # optional: additionally pre-fill a human corrector's own fields
-            # with an editable draft (set KK_DRAFT_USER_ID/KK_DRAFT_CORRECTOR_ID)
+            # pre-fill a human corrector's own fields with an editable draft
+            # (KK_DRAFT_USER_ID/KK_DRAFT_CORRECTOR_ID); with KK_DRAFT_ONLY=1
+            # this replaces the separate AI reference layer entirely
             draft_user = os.environ.get("KK_DRAFT_USER_ID")
             draft_corr = os.environ.get("KK_DRAFT_CORRECTOR_ID")
+            draft_only = os.environ.get("KK_DRAFT_ONLY") == "1" and draft_user and draft_corr
+            if not draft_only:
+                targets.append((int(cfg("XLAS_USER_ID")), request["provider"]["corrector_id"],
+                                summary_status, "ai", "KI-Layer"))
             if draft_user and draft_corr:
                 targets.append((int(draft_user), int(draft_corr), "open",
                                 f"ai-k{draft_corr}", "Entwurf"))
@@ -362,11 +365,18 @@ def correct_item(task_id: int, writer_id: int,
 
 def own_correction_exists(task_id: int, writer_id: int) -> bool:
     """True if the provider's corrector already has comments or points on the item."""
-    item = provider_get(f"/provider/item/{task_id}/{writer_id}")
+    # check as the corrector who receives the import: unauthorized drafts are
+    # only visible to their own corrector, so the item must be fetched with
+    # that user's id (draft mode: the human corrector, else the provider)
+    if os.environ.get("KK_DRAFT_ONLY") == "1" and os.environ.get("KK_DRAFT_USER_ID"):
+        check_user = int(os.environ["KK_DRAFT_USER_ID"])
+    else:
+        check_user = int(cfg("XLAS_USER_ID"))
+    item = provider_get(f"/provider/item/{task_id}/{writer_id}", str(check_user))
     task_data = item.get("Task") or {}
     corrector_id = None
     for corr in task_data.get("Corrections", []):
-        if corr.get("user_id") == int(cfg("XLAS_USER_ID")):
+        if corr.get("user_id") == check_user:
             corrector_id = corr.get("corrector_id")
     if corrector_id is None:
         return True  # not assigned -> nothing to do

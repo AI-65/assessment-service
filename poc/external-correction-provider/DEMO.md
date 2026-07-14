@@ -9,7 +9,7 @@ Abgaben automatisch mit Claude Opus 4.8.
 | Abgabe | Inhalt | Zeigt |
 |---|---|---|
 | **Teilnehmer 1** (writer1) | schwache Bearbeitung (Saldotheorie falsch) | KI als separater Erstkorrektur-Layer: 5 Anmerkungen inkl. Kardinalfehler, Votum, Note |
-| **Wanda Writer** (writer2) | vollständiges Gutachten, 1.700 Wörter | **Beide Modi gleichzeitig:** KI-Layer (18,5 P, freigegeben) als Referenz **und** Karlas eigene Felder vorbefüllt als bearbeitbarer Entwurf (18 P, offen) — Nils' „Vorkorrektur zum Bearbeiten" |
+| **Wanda Writer** (writer2) | vollständiges Gutachten, 1.700 Wörter | **Vorbefüllte Felder:** Karlas eigene Bewertung ist komplett vorausgefüllt (Anmerkungen, Teilpunkte, Votum — offen, bearbeitbar) — Nils' „Vorkorrektur zum Bearbeiten" |
 | **Willem Writer** (writer3) | noch leer | Live-Durchlauf vor Publikum |
 
 Logins (alle `http://localhost:8081`):
@@ -70,13 +70,14 @@ Als **korrektor2**: Testklausur → **Teilnehmer 1** öffnen.
 Noch als **korrektor2**: zurück zur Liste → **Wanda Writer** öffnen.
 
 - Jetzt sind **Karlas eigene Felder vorbefüllt**: Anmerkungen, Teilpunkte,
-  Votum-Entwurf — Status „offen", nichts ist freigegeben
-- Live vormachen: eine KI-Anmerkung **editieren**, eine Punktzahl **ändern**,
+  Votum-Entwurf — Status „offen", nichts ist freigegeben (kein separater
+  KI-Layer daneben; der Disclaimer im Votum kennzeichnet die KI-Herkunft)
+- Live vormachen: eine Anmerkung **editieren**, eine Punktzahl **ändern**,
   eine Anmerkung **löschen** — dann sagen: *„Das ist genau die Vorkorrektur aus
   unserem letzten Gespräch: Die Korrektorin übernimmt, ändert oder verwirft, und
   gibt am Ende selbst frei."*
-- Beide Modi sind **derselbe Endpunkt, nur ein Parameter** — die Hochschule
-  wählt den Workflow, nicht wir
+- Beide Modi (separater Layer aus Teil 1, Entwurf aus Teil 2) sind **derselbe
+  Endpunkt, nur ein Parameter** — die Hochschule wählt den Workflow, nicht wir
 
 ### Teil 3 — Live-Durchlauf (6–8 Min)
 
@@ -91,11 +92,9 @@ Noch als **korrektor2**: zurück zur Liste → **Wanda Writer** öffnen.
    *„Die Hochschule behält die Kontrolle: Erst die Freigabe macht die Abgabe für
    die Vorkorrektur sichtbar — und sie entscheidet, wer korrigiert."*
 3. **Worker-Terminal zeigen:** ≤ 15 s später „neue Abgabe gefunden", dann
-   „korrigiere mit claude-opus-4-8", nach 30–60 s zwei Importe: „import ok
-   (KI-Layer)" und „import ok (Entwurf)"
+   „korrigiere mit claude-opus-4-8", nach 30–60 s „import ok (Entwurf)"
 4. **Fenster korrektor2:** Liste neu laden → Willem öffnen → Karlas Felder sind
-   **vorbefüllt** (bearbeitbarer Entwurf), zusätzlich der KI-Layer als Referenz
-   über das Doktorhut-Icon — wie bei Wanda, nur live erzeugt
+   **vorbefüllt** (bearbeitbarer Entwurf) — wie bei Wanda, nur live erzeugt
 
 ### Teil 4 — Technik & offene Punkte (3 Min, ehrlich)
 
