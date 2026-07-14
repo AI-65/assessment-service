@@ -81,8 +81,9 @@ Noch als **korrektor2**: zurück zur Liste → **Wanda Writer** öffnen.
 ### Teil 3 — Live-Durchlauf (6–8 Min)
 
 1. **Fenster writer3 (Willem):** Testklausur → „Meine Aufgabe" → „Bearbeitung
-   starten" → 5–8 Sätze **live tippen** (Kopierschutz der Writer-App erwähnen —
-   Klausurintegrität ist eingebaut!) → abgeben
+   starten" → vorbereitetes Gutachten **einfügen** (Paste ist für die Demo per
+   Einstellung erlaubt; erwähnenswert: im echten Klausurmodus blockiert EDUTIEK
+   fremden Text — Klausurintegrität ist eingebaut) → abgeben
 2. **Fenster root:** Tab **„Teilnahmeverwaltung"** → Zeile Willem → Aktionen-Dropdown
    → **„Abgabe freigeben"** → bestätigen. Dann Tab **„Korrekturverwaltung"** →
    Willem zuweisen: **KI-Vorschlag Korrekturservice** (Erstkorrektur) + **Karla
