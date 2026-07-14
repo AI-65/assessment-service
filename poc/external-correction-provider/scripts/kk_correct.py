@@ -222,7 +222,8 @@ def run_llm(request: dict) -> dict:
     return result
 
 
-def to_suggestions(request: dict, correction: dict) -> dict:
+def to_suggestions(request: dict, correction: dict, summary_status: str = "authorized",
+                   key_prefix: str = "ai") -> dict:
     """Map the LLM output to the correction-suggestions/v0 schema, clamping
     word positions and per-criterion point sums to valid ranges."""
     criteria = {c["id"]: c for c in request["criteria"]}
@@ -246,7 +247,7 @@ def to_suggestions(request: dict, correction: dict) -> dict:
         start = max(1, min(int(comment["start_word"]), max_word))
         end = max(start, min(int(comment["end_word"]), max_word))
         entry = {
-            "key": f"ai-c{i}",
+            "key": f"{key_prefix}-c{i}",
             "start_position": start,
             "end_position": end,
             "comment": comment["comment"],
@@ -261,7 +262,7 @@ def to_suggestions(request: dict, correction: dict) -> dict:
             if value is not None:
                 point_counter += 1
                 entry["points"].append(
-                    {"key": f"ai-p{point_counter}", "criterion_id": point["criterion_id"], "points": value}
+                    {"key": f"{key_prefix}-p{point_counter}", "criterion_id": point["criterion_id"], "points": value}
                 )
         comments.append(entry)
 
@@ -274,7 +275,7 @@ def to_suggestions(request: dict, correction: dict) -> dict:
         if value is not None:
             point_counter += 1
             criterion_points.append(
-                {"key": f"ai-p{point_counter}", "criterion_id": point["criterion_id"], "points": value}
+                {"key": f"{key_prefix}-p{point_counter}", "criterion_id": point["criterion_id"], "points": value}
             )
 
     total = round(sum(spent.values()), 2)
@@ -287,24 +288,32 @@ def to_suggestions(request: dict, correction: dict) -> dict:
         "summary": {
             "text": correction["summary"]["text"],
             "points": total,
-            # authorized so that the human corrector sees the suggestions
-            "status": "authorized",
+            # authorized: visible to other correctors as a separate AI layer;
+            # open: stays an editable draft (used by the draft import mode)
+            "status": summary_status,
         },
     }
 
 
-def correct_item(task_id: int, writer_id: int) -> None:
-    base_args = [
+def correct_item(task_id: int, writer_id: int,
+                 import_user_id: "int | None" = None,
+                 import_corrector_id: "int | None" = None,
+                 summary_status: str = "authorized") -> None:
+    """Correct one submission. By default the suggestions are stored under the
+    provider's own corrector (separate AI layer, authorized). If
+    import_user_id/import_corrector_id are given, they are written as an
+    editable DRAFT into that (human) corrector's own layer instead."""
+    common = [
         "--base", cfg("XLAS_BASE"),
         "--ass-id", cfg("XLAS_ASS_ID"),
         "--context-id", cfg("XLAS_CONTEXT_ID"),
-        "--user-id", cfg("XLAS_USER_ID"),
         "--provider-key", cfg("XLAS_PROVIDER_KEY"),
     ]
+    export_args = [*common, "--user-id", cfg("XLAS_USER_ID")]
     with tempfile.TemporaryDirectory() as tmp:
         request_file = Path(tmp) / "request.json"
         subprocess.run(
-            [sys.executable, str(SCRIPTS / "export_item.py"), *base_args,
+            [sys.executable, str(SCRIPTS / "export_item.py"), *export_args,
              "--task-id", str(task_id), "--writer-id", str(writer_id),
              "-o", str(request_file)],
             check=True, capture_output=True, text=True,
@@ -312,15 +321,18 @@ def correct_item(task_id: int, writer_id: int) -> None:
         request = json.loads(request_file.read_text())
         log(f"export ok: task {task_id}, writer {writer_id} ({request['item'].get('pseudonym')})")
 
-        suggestions = to_suggestions(request, run_llm(request))
+        key_prefix = f"ai-k{import_corrector_id}" if import_corrector_id else "ai"
+        suggestions = to_suggestions(request, run_llm(request), summary_status, key_prefix)
         suggestions_file = Path(tmp) / "suggestions.json"
         suggestions_file.write_text(json.dumps(suggestions, ensure_ascii=False, indent=2))
         log(f"korrektur fertig: {len(suggestions['comments'])} Anmerkungen, "
             f"{suggestions['summary']['points']} Punkte")
 
+        import_args = [*common,
+                       "--user-id", str(import_user_id or cfg("XLAS_USER_ID")),
+                       "--corrector-id", str(import_corrector_id or request["provider"]["corrector_id"])]
         result = subprocess.run(
-            [sys.executable, str(SCRIPTS / "import_suggestions.py"), *base_args,
-             "--corrector-id", str(request["provider"]["corrector_id"]),
+            [sys.executable, str(SCRIPTS / "import_suggestions.py"), *import_args,
              str(suggestions_file)],
             capture_output=True, text=True,
         )
@@ -383,15 +395,27 @@ def main() -> None:
     parser.add_argument("--task-id", type=int, help="required with --once")
     parser.add_argument("--writer-id", type=int, help="required with --once")
     parser.add_argument("--interval", type=int, default=15, help="watch poll interval seconds")
+    parser.add_argument("--import-user-id", type=int,
+                        help="draft mode: ILIAS user id of the HUMAN corrector to receive the suggestions as editable draft")
+    parser.add_argument("--import-corrector-id", type=int,
+                        help="draft mode: corrector id belonging to --import-user-id")
+    parser.add_argument("--summary-status", default=None, choices=["open", "pre_graded", "authorized"],
+                        help="grading status for the imported summary (default: authorized; draft mode default: open)")
     args = parser.parse_args()
 
     if args.env_file:
         load_env_file(args.env_file)
 
+    draft = args.import_user_id is not None
+    if draft != (args.import_corrector_id is not None):
+        parser.error("--import-user-id and --import-corrector-id must be used together")
+    status = args.summary_status or ("open" if draft else "authorized")
+
     if args.once:
         if args.task_id is None or args.writer_id is None:
             parser.error("--once requires --task-id and --writer-id")
-        correct_item(args.task_id, args.writer_id)
+        correct_item(args.task_id, args.writer_id,
+                     args.import_user_id, args.import_corrector_id, status)
     else:
         watch(args.interval)
 
