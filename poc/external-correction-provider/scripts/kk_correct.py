@@ -227,7 +227,7 @@ def to_suggestions(request: dict, correction: dict, summary_status: str = "autho
     """Map the LLM output to the correction-suggestions/v0 schema, clamping
     word positions and per-criterion point sums to valid ranges."""
     criteria = {c["id"]: c for c in request["criteria"]}
-    max_word = correction.pop("_max_word", 0) or 10 ** 9
+    max_word = correction.get("_max_word", 0) or 10 ** 9
     spent: dict[int, float] = {}
 
     def clamp_points(criterion_id: int, points: float) -> "float | None":
@@ -321,25 +321,43 @@ def correct_item(task_id: int, writer_id: int,
         request = json.loads(request_file.read_text())
         log(f"export ok: task {task_id}, writer {writer_id} ({request['item'].get('pseudonym')})")
 
-        key_prefix = f"ai-k{import_corrector_id}" if import_corrector_id else "ai"
-        suggestions = to_suggestions(request, run_llm(request), summary_status, key_prefix)
-        suggestions_file = Path(tmp) / "suggestions.json"
-        suggestions_file.write_text(json.dumps(suggestions, ensure_ascii=False, indent=2))
-        log(f"korrektur fertig: {len(suggestions['comments'])} Anmerkungen, "
-            f"{suggestions['summary']['points']} Punkte")
+        correction = run_llm(request)
 
-        import_args = [*common,
-                       "--user-id", str(import_user_id or cfg("XLAS_USER_ID")),
-                       "--corrector-id", str(import_corrector_id or request["provider"]["corrector_id"])]
-        result = subprocess.run(
-            [sys.executable, str(SCRIPTS / "import_suggestions.py"), *import_args,
-             str(suggestions_file)],
-            capture_output=True, text=True,
-        )
-        print(result.stdout, end="")
-        if result.returncode != 0:
-            raise RuntimeError(f"import failed: {result.stdout}{result.stderr}")
-        log("import ok — Vorschläge sind im Corrector sichtbar")
+        # import targets: (user_id, corrector_id, status, key_prefix, label)
+        targets = []
+        if import_user_id is not None:
+            targets.append((import_user_id, import_corrector_id, summary_status,
+                            f"ai-k{import_corrector_id}", "Entwurf"))
+        else:
+            targets.append((int(cfg("XLAS_USER_ID")), request["provider"]["corrector_id"],
+                            summary_status, "ai", "KI-Layer"))
+            # optional: additionally pre-fill a human corrector's own fields
+            # with an editable draft (set KK_DRAFT_USER_ID/KK_DRAFT_CORRECTOR_ID)
+            draft_user = os.environ.get("KK_DRAFT_USER_ID")
+            draft_corr = os.environ.get("KK_DRAFT_CORRECTOR_ID")
+            if draft_user and draft_corr:
+                targets.append((int(draft_user), int(draft_corr), "open",
+                                f"ai-k{draft_corr}", "Entwurf"))
+
+        first = True
+        for user_id, corrector_id, status, prefix, label in targets:
+            suggestions = to_suggestions(request, correction, status, prefix)
+            if first:
+                log(f"korrektur fertig: {len(suggestions['comments'])} Anmerkungen, "
+                    f"{suggestions['summary']['points']} Punkte")
+                first = False
+            suggestions_file = Path(tmp) / f"suggestions-{corrector_id}.json"
+            suggestions_file.write_text(json.dumps(suggestions, ensure_ascii=False, indent=2))
+            result = subprocess.run(
+                [sys.executable, str(SCRIPTS / "import_suggestions.py"), *common,
+                 "--user-id", str(user_id), "--corrector-id", str(corrector_id),
+                 str(suggestions_file)],
+                capture_output=True, text=True,
+            )
+            print(result.stdout, end="")
+            if result.returncode != 0:
+                raise RuntimeError(f"import failed ({label}): {result.stdout}{result.stderr}")
+            log(f"import ok ({label}, Korrektor {corrector_id})")
 
 
 def own_correction_exists(task_id: int, writer_id: int) -> bool:

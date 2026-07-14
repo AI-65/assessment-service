@@ -91,8 +91,11 @@ Noch als **korrektor2**: zurück zur Liste → **Wanda Writer** öffnen.
    *„Die Hochschule behält die Kontrolle: Erst die Freigabe macht die Abgabe für
    die Vorkorrektur sichtbar — und sie entscheidet, wer korrigiert."*
 3. **Worker-Terminal zeigen:** ≤ 15 s später „neue Abgabe gefunden", dann
-   „korrigiere mit claude-opus-4-8", nach 30–60 s „import ok"
-4. **Fenster korrektor2:** Liste neu laden → Willem öffnen → frische Vorkorrektur
+   „korrigiere mit claude-opus-4-8", nach 30–60 s zwei Importe: „import ok
+   (KI-Layer)" und „import ok (Entwurf)"
+4. **Fenster korrektor2:** Liste neu laden → Willem öffnen → Karlas Felder sind
+   **vorbefüllt** (bearbeitbarer Entwurf), zusätzlich der KI-Layer als Referenz
+   über das Doktorhut-Icon — wie bei Wanda, nur live erzeugt
 
 ### Teil 4 — Technik & offene Punkte (3 Min, ehrlich)
 
