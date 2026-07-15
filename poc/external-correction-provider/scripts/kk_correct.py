@@ -295,6 +295,19 @@ def to_suggestions(request: dict, correction: dict, summary_status: str = "autho
     }
 
 
+USAGE_LOG = Path(os.environ.get("KK_USAGE_LOG", str(Path.home() / "kk-worker" / "usage.jsonl")))
+
+
+def log_usage(record: dict) -> None:
+    """Append one billing record per corrected submission (JSONL)."""
+    try:
+        USAGE_LOG.parent.mkdir(parents=True, exist_ok=True)
+        with USAGE_LOG.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(record, ensure_ascii=False) + "\n")
+    except OSError as exc:
+        log(f"WARNUNG: usage log fehlgeschlagen: {exc}")
+
+
 def correct_item(task_id: int, writer_id: int,
                  import_user_id: "int | None" = None,
                  import_corrector_id: "int | None" = None,
@@ -361,6 +374,19 @@ def correct_item(task_id: int, writer_id: int,
             if result.returncode != 0:
                 raise RuntimeError(f"import failed ({label}): {result.stdout}{result.stderr}")
             log(f"import ok ({label}, Korrektor {corrector_id})")
+
+        log_usage({
+            "ts": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+            "ass_id": int(cfg("XLAS_ASS_ID")),
+            "task_id": task_id,
+            "writer_id": writer_id,
+            "pseudonym": request["item"].get("pseudonym"),
+            "words": len(re.sub(r"<[^>]+>", " ", request["essay"]["text"] or "").split()),
+            "model": MODEL,
+            "comments": len(suggestions["comments"]),
+            "points_total": suggestions["summary"]["points"],
+            "targets": [t[4] for t in targets],
+        })
 
 
 def own_correction_exists(task_id: int, writer_id: int) -> bool:
