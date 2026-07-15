@@ -12,13 +12,9 @@ Abgaben automatisch mit Claude Opus 4.8.
 | **Wanda Writer** (writer2) | vollständiges Gutachten, 1.700 Wörter | **Vorbefüllte Felder:** Karlas eigene Bewertung ist komplett vorausgefüllt (Anmerkungen, Teilpunkte, Votum — offen, bearbeitbar) — Nils' „Vorkorrektur zum Bearbeiten" |
 | **Willem Writer** (writer3) | noch leer | Live-Durchlauf vor Publikum |
 
-Logins (alle `http://localhost:8081`):
-
-| Login | Passwort | Rolle |
-|---|---|---|
-| writer3 | WriterPoc2026 | Student (schreibt live) |
-| root | IliasPoc2026 | Dozent/Prüfungsamt |
-| korrektor2 | Korr2Poc2026 | Menschliche Korrektorin (Karla) |
+Zugangsdaten: **nicht im Repo** — liegen auf dem Server in
+`~/kk-worker/ZUGAENGE.txt` (Instanz ist öffentlich erreichbar unter
+`https://edutiek.klausurenkiste.de`).
 
 ## Vorbereitung (am Demo-Tag, ~10 Minuten vorher)
 
